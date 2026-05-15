@@ -184,3 +184,8 @@ const PORT =
 app.listen(PORT, () => {
   console.log('running');
 });
+
+app.get('/', (req, res) => {
+  res.send('running');
+});
+
