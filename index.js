@@ -20,6 +20,10 @@ const client = new Client({
 
 client.login(process.env.BOT_TOKEN);
 
+app.get('/', (req, res) => {
+  res.send('running');
+});
+
 app.post('/send', async (req, res) => {
 
   try {
@@ -51,13 +55,15 @@ app.post('/send', async (req, res) => {
           .setCustomId(
             `skip_${req.body.notifyId}`
           )
-          .setLabel('❌ 無理')
+          .setLabel('🚫 出さない')
           .setStyle(ButtonStyle.Danger)
       );
 
     await channel.send({
       content:
-        `🔔 今日は「${req.body.garbageName}」です！`,
+        `🔔 今日は「${req.body.garbageName}」です！\n\n` +
+        `📅 今後7日間の予定\n` +
+        `${req.body.upcoming}`,
       components: [row]
     });
 
@@ -101,6 +107,8 @@ client.on(
     if (!interaction.isButton())
       return;
 
+    await interaction.deferUpdate();
+
     const [
       action,
       notifyId
@@ -131,18 +139,25 @@ client.on(
       status = 'skip';
 
       message =
-        '❌ スキップ記録しました';
+        '🚫 出さないで記録しました';
     }
 
-    await axios.post(
-      process.env.GAS_WEBHOOK_URL,
-      {
-        notifyId,
-        status,
-        user:
-          interaction.user.username
-      }
-    );
+    try {
+
+      await axios.post(
+        process.env.GAS_WEBHOOK_URL,
+        {
+          notifyId,
+          status,
+          user:
+            interaction.user.username
+        }
+      );
+
+    } catch (e) {
+
+      console.error(e);
+    }
 
     const disabledRow =
       new ActionRowBuilder()
@@ -162,12 +177,12 @@ client.on(
 
         new ButtonBuilder()
           .setCustomId('skip_disabled')
-          .setLabel('❌ 無理')
+          .setLabel('🚫 出さない')
           .setStyle(ButtonStyle.Danger)
           .setDisabled(true)
       );
 
-    await interaction.update({
+    await interaction.message.edit({
       components: [disabledRow]
     });
 
@@ -184,8 +199,3 @@ const PORT =
 app.listen(PORT, () => {
   console.log('running');
 });
-
-app.get('/', (req, res) => {
-  res.send('running');
-});
-
