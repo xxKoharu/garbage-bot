@@ -62,6 +62,7 @@ app.post('/send', async (req, res) => {
     await channel.send({
       content:
         `🔔 今日は「${req.body.garbageName}」です！\n\n` +
+        `⏰ 朝8時までに出してください\n\n` +
         `📅 今後7日間の予定\n` +
         `${req.body.upcoming}`,
       components: [row]
