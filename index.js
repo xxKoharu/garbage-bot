@@ -1,6 +1,11 @@
-const express = require('express');
-const bodyParser = require('body-parser');
-const axios = require('axios');
+const express =
+  require('express');
+
+const bodyParser =
+  require('body-parser');
+
+const axios =
+  require('axios');
 
 const {
   Client,
@@ -14,11 +19,16 @@ const app = express();
 
 app.use(bodyParser.json());
 
-const client = new Client({
-  intents: [GatewayIntentBits.Guilds]
-});
+const client =
+  new Client({
+    intents: [
+      GatewayIntentBits.Guilds
+    ]
+  });
 
-client.login(process.env.BOT_TOKEN);
+client.login(
+  process.env.BOT_TOKEN
+);
 
 app.get('/', (req, res) => {
   res.send('running');
@@ -42,29 +52,37 @@ app.post('/send', async (req, res) => {
             `done_${req.body.notifyId}`
           )
           .setLabel('✅ 出した')
-          .setStyle(ButtonStyle.Success),
+          .setStyle(
+            ButtonStyle.Success
+          ),
 
         new ButtonBuilder()
           .setCustomId(
             `later_${req.body.notifyId}`
           )
           .setLabel('⏰ まだ')
-          .setStyle(ButtonStyle.Primary),
+          .setStyle(
+            ButtonStyle.Primary
+          ),
 
         new ButtonBuilder()
           .setCustomId(
             `skip_${req.body.notifyId}`
           )
           .setLabel('🚫 出さない')
-          .setStyle(ButtonStyle.Danger)
+          .setStyle(
+            ButtonStyle.Danger
+          )
       );
 
     await channel.send({
+
       content:
-        `🔔 今日は「${req.body.garbageName}」です！\n\n` +
+        `🔔 明日は「${req.body.garbageName}」です！\n` +
         `⏰ 朝8時までに出してください\n\n` +
         `📅 今後7日間の予定\n` +
         `${req.body.upcoming}`,
+
       components: [row]
     });
 
@@ -88,7 +106,8 @@ app.post('/reminder', async (req, res) => {
       );
 
     await channel.send({
-      content: req.body.message
+      content:
+        req.body.message
     });
 
     res.sendStatus(200);
@@ -114,7 +133,8 @@ client.on(
       action,
       notifyId
     ] =
-      interaction.customId.split('_');
+      interaction.customId
+        .split('_');
 
     let status = '';
     let message = '';
@@ -151,7 +171,8 @@ client.on(
           notifyId,
           status,
           user:
-            interaction.user.username
+            interaction.user
+              .username
         }
       );
 
@@ -165,26 +186,39 @@ client.on(
       .addComponents(
 
         new ButtonBuilder()
-          .setCustomId('done_disabled')
+          .setCustomId(
+            'done_disabled'
+          )
           .setLabel('✅ 出した')
-          .setStyle(ButtonStyle.Success)
+          .setStyle(
+            ButtonStyle.Success
+          )
           .setDisabled(true),
 
         new ButtonBuilder()
-          .setCustomId('later_disabled')
+          .setCustomId(
+            'later_disabled'
+          )
           .setLabel('⏰ まだ')
-          .setStyle(ButtonStyle.Primary)
+          .setStyle(
+            ButtonStyle.Primary
+          )
           .setDisabled(true),
 
         new ButtonBuilder()
-          .setCustomId('skip_disabled')
+          .setCustomId(
+            'skip_disabled'
+          )
           .setLabel('🚫 出さない')
-          .setStyle(ButtonStyle.Danger)
+          .setStyle(
+            ButtonStyle.Danger
+          )
           .setDisabled(true)
       );
 
     await interaction.message.edit({
-      components: [disabledRow]
+      components:
+        [disabledRow]
     });
 
     await interaction.followUp({
