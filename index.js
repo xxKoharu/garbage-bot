@@ -121,7 +121,7 @@ client.on(
 
     if (action === 'done') {
 
-      status = 'done';
+      status = '完了';
 
       message =
         '✅ ゴミ出し完了！';
@@ -129,7 +129,7 @@ client.on(
 
     if (action === 'later') {
 
-      status = 'later';
+      status = 'あとで';
 
       message =
         '⏰ 後で再通知します';
@@ -137,7 +137,7 @@ client.on(
 
     if (action === 'skip') {
 
-      status = 'skip';
+      status = '出さない';
 
       message =
         '🚫 出さないで記録しました';
