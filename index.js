@@ -1,236 +1,90 @@
-const express =
-  require('express');
-
-const bodyParser =
-  require('body-parser');
-
-const axios =
-  require('axios');
+const express = require('express');
+const bodyParser = require('body-parser');
 
 const {
   Client,
   GatewayIntentBits,
-  ActionRowBuilder,
-  ButtonBuilder,
-  ButtonStyle
+  EmbedBuilder
 } = require('discord.js');
 
 const app = express();
+app.use(bodyParser.json({ limit: '1mb' }));
 
-app.use(bodyParser.json());
+const client = new Client({
+  intents: [GatewayIntentBits.Guilds]
+});
 
-const client =
-  new Client({
-    intents: [
-      GatewayIntentBits.Guilds
-    ]
-  });
+client.login(process.env.BOT_TOKEN);
 
-client.login(
-  process.env.BOT_TOKEN
-);
+client.once('ready', () => {
+  console.log(`Discord bot logged in as ${client.user.tag}`);
+});
 
 app.get('/', (req, res) => {
   res.send('running');
 });
 
+app.get('/health', (req, res) => {
+  res.json({
+    ok: true,
+    status: 'running',
+    time: new Date().toISOString()
+  });
+});
+
 app.post('/send', async (req, res) => {
-
   try {
-
-    const channel =
-      await client.channels.fetch(
-        process.env.CHANNEL_ID
-      );
-
-    const row =
-      new ActionRowBuilder()
-      .addComponents(
-
-        new ButtonBuilder()
-          .setCustomId(
-            `done_${req.body.notifyId}`
-          )
-          .setLabel('✅ 出した')
-          .setStyle(
-            ButtonStyle.Success
-          ),
-
-        new ButtonBuilder()
-          .setCustomId(
-            `later_${req.body.notifyId}`
-          )
-          .setLabel('⏰ まだ')
-          .setStyle(
-            ButtonStyle.Primary
-          ),
-
-        new ButtonBuilder()
-          .setCustomId(
-            `skip_${req.body.notifyId}`
-          )
-          .setLabel('🚫 出さない')
-          .setStyle(
-            ButtonStyle.Danger
-          )
-      );
-
-    await channel.send({
-
-      content:
-        `🔔 明日は「${req.body.garbageName}」です！\n` +
-        `⏰ 朝8時までに出してください\n\n` +
-        `📅 今後7日間の予定\n` +
-        `${req.body.upcoming}`,
-
-      components: [row]
-    });
-
+    await sendDiscordMessage(req.body.content, 'main');
     res.sendStatus(200);
-
-  } catch (e) {
-
-    console.error(e);
-
-    res.sendStatus(500);
+  } catch (error) {
+    console.error('send error:', error);
+    res.status(500).json({ error: error.message });
   }
 });
 
 app.post('/reminder', async (req, res) => {
-
   try {
-
-    const channel =
-      await client.channels.fetch(
-        process.env.CHANNEL_ID
-      );
-
-    await channel.send({
-      content:
-        req.body.message
-    });
-
+    await sendDiscordMessage(req.body.content, 'reminder');
     res.sendStatus(200);
-
-  } catch (e) {
-
-    console.error(e);
-
-    res.sendStatus(500);
+  } catch (error) {
+    console.error('reminder error:', error);
+    res.status(500).json({ error: error.message });
   }
 });
 
-client.on(
-  'interactionCreate',
-  async interaction => {
-
-    if (!interaction.isButton())
-      return;
-
-    await interaction.deferUpdate();
-
-    const [
-      action,
-      notifyId
-    ] =
-      interaction.customId
-        .split('_');
-
-    let status = '';
-    let message = '';
-
-    if (action === 'done') {
-
-      status = '完了';
-
-      message =
-        '✅ ゴミ出し完了！';
-    }
-
-    if (action === 'later') {
-
-      status = 'あとで';
-
-      message =
-        '⏰ 後で再通知します';
-    }
-
-    if (action === 'skip') {
-
-      status = '出さない';
-
-      message =
-        '🚫 出さないで記録しました';
-    }
-
-    try {
-
-      await axios.post(
-        process.env.GAS_WEBHOOK_URL,
-        {
-          notifyId,
-          status,
-          user:
-            interaction.user
-              .username
-        }
-      );
-
-    } catch (e) {
-
-      console.error(e);
-    }
-
-    const disabledRow =
-      new ActionRowBuilder()
-      .addComponents(
-
-        new ButtonBuilder()
-          .setCustomId(
-            'done_disabled'
-          )
-          .setLabel('✅ 出した')
-          .setStyle(
-            ButtonStyle.Success
-          )
-          .setDisabled(true),
-
-        new ButtonBuilder()
-          .setCustomId(
-            'later_disabled'
-          )
-          .setLabel('⏰ まだ')
-          .setStyle(
-            ButtonStyle.Primary
-          )
-          .setDisabled(true),
-
-        new ButtonBuilder()
-          .setCustomId(
-            'skip_disabled'
-          )
-          .setLabel('🚫 出さない')
-          .setStyle(
-            ButtonStyle.Danger
-          )
-          .setDisabled(true)
-      );
-
-    await interaction.message.edit({
-      components:
-        [disabledRow]
-    });
-
-    await interaction.followUp({
-      content: message,
-      ephemeral: true
-    });
+async function sendDiscordMessage(content, type) {
+  if (!process.env.CHANNEL_ID) {
+    throw new Error('CHANNEL_ID is not set');
   }
-);
 
-const PORT =
-  process.env.PORT || 3000;
+  const channel = await client.channels.fetch(process.env.CHANNEL_ID);
+  if (!channel) {
+    throw new Error('Discord channel not found');
+  }
 
+  const useEmbeds = String(process.env.USE_EMBEDS || '').toLowerCase() === 'true';
+
+  if (useEmbeds) {
+    const embed = new EmbedBuilder()
+      .setDescription(content)
+      .setTimestamp(new Date());
+
+    if (type === 'reminder') {
+      embed.setTitle('ゴミ出し再通知');
+      embed.setColor(0xf59e0b);
+    } else {
+      embed.setTitle('ゴミの日通知');
+      embed.setColor(0x22c55e);
+    }
+
+    await channel.send({ embeds: [embed] });
+    return;
+  }
+
+  await channel.send({ content });
+}
+
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log('running');
+  console.log(`server running on port ${PORT}`);
 });
