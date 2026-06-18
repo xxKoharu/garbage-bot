@@ -1,14 +1,17 @@
 {
-  "name": "garbage-bot",
-  "version": "1.0.0",
+  "name": "garbage-discord-bot",
+  "version": "2.0.0",
+  "description": "Garbage day notification bot for Discord + Google Apps Script",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"
   },
   "dependencies": {
-    "axios": "^1.7.2",
     "body-parser": "^1.20.2",
     "discord.js": "^14.15.3",
     "express": "^4.19.2"
+  },
+  "engines": {
+    "node": ">=18"
   }
 }
